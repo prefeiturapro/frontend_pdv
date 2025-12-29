@@ -1,0 +1,46 @@
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+}
+
+/* ... todos os seus estilos existentes (como .logo, @keyframes, .card) ... */
+
+.read-the-docs {
+  color: #888;
+}
+
+/* ------------------------------------------------------------------- */
+/* 🎨 ESTILOS MODERNOS (COLE A PARTIR DAQUI) */
+/* ------------------------------------------------------------------- */
+
+/* Variáveis para fácil alteração de tema */
+:root {
+    --primary-color: #007bff; /* Azul primário */
+    --success-color: #28a745; /* Verde para inserção */
+    --danger-color: #dc3545; /* Vermelho para exclusão */
+    --background-light: #f4f7f6;
+    --background-card: #ffffff;
+    --text-dark: #343a40;
+    --border-light: #dee2e6;
+    --shadow-subtle: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+body {
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--background-light);
+    color: var(--text-dark);
+}
+
+/* Container Principal */
+.container {
+    padding: 30px;
+    max-width: 1200px;
+    margin: 0 auto;
+    /* Remover o text-align: center que está no #root, se necessário */
+    text-align: left; 
+}
+
+/* ... todo o restante do código CSS que eu enviei (tabela, botões, media query) ... */
