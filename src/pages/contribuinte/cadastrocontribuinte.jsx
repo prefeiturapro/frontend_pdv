@@ -8,7 +8,7 @@ const IconMap = () => <svg className="w-5 h-5 text-gray-400" fill="none" viewBox
 const IconClose = () => <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>;
 
 const CadastroContribuinte = ({ isOpen, onClose, telefoneInicial, aoSalvar }) => {
-  const API_URL = "http://127.0.0.1:3001";
+  const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:3001";
 
   const [formData, setFormData] = useState({
     nr_telefone: "",
