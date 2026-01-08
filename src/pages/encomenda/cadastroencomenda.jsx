@@ -45,7 +45,7 @@ const UnitInput = ({ label, name, value, onChange }) => (
 function CadastroEncomenda() {
   const navigate = useNavigate();
   const location = useLocation();
-  const API_URL = "http://127.0.0.1:3001"; 
+  const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:3001";
 
   const [modalClienteAberto, setModalClienteAberto] = useState(false);
 

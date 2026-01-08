@@ -24,7 +24,7 @@ const Sidebar = () => (
 
 function ConsultaEncomenda() {
   const navigate = useNavigate();
-  const API_URL = "http://127.0.0.1:3001";
+  const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:3001";
   const dataHoje = new Date().toISOString().split('T')[0];
 
   const [filtros, setFiltros] = useState({ nm_nomefantasia: "", nr_telefone: "", dt_abertura: dataHoje, hr_horaenc: "" });
@@ -124,7 +124,7 @@ const handleStatusChange = async (e, id, novoStatus) => {
        alert("Não é possível editar um pedido que já foi Entregue ou Cancelado.");
        return; // Para a execução aqui, não navega
     }
-    
+
     navigate('/cadastro-encomendas', { state: { encomendaParaEditar: enc } });
   }
 

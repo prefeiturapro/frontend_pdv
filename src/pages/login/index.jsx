@@ -11,7 +11,8 @@ import logo_prefeiturapro from '../../assets/imagem/logo_prefeiturapro.svg';
 import logo_cafe_francesa from '../../assets/imagem/logo_cafe_francesa.png';
 import '../../assets/css/login.css';
 
-const API_URL = "http://localhost:3001";
+
+const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:3001";
 
 
 function Login() {
