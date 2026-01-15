@@ -68,7 +68,7 @@ function Home() {
 
     // 2. Cria o timer para rodar a cada 10 segundos (para teste rápido)
     // Depois você pode mudar 10000 para 30000 (30s)
-    const intervalo = setInterval(buscarDados, 10000);
+    const intervalo = setInterval(buscarDados, 60000);
 
     // 3. Limpa o timer se sair da tela
     return () => clearInterval(intervalo);
