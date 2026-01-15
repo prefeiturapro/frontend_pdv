@@ -21,26 +21,35 @@ function Home() {
   useEffect(() => {
     
     // Função interna para buscar encomendas (com Anti-Cache)
-    const buscarDados = async () => {
-        try {
-            console.log("🔄 Buscando atualizações no servidor...", new Date().toLocaleTimeString());
-            
-            // O TRUQUE ESTÁ AQUI: ?t=... obriga o navegador a não usar o cache
-            const url = `${API_URL}/encomendas?t=${new Date().getTime()}`;
-            
-            const res = await fetch(url, {
-                headers: { 'Cache-Control': 'no-cache' } // Força extra contra cache
-            });
+// pages/home/index.jsx
 
-            if (!res.ok) throw new Error("Erro ao atualizar");
-            const data = await res.json();
-            
-            setEncomendas(data);
-            setUltimaAtualizacao(new Date()); // Atualiza o relógio na tela
-        } catch (err) {
-            console.error("Erro na atualização automática:", err);
-        }
+  useEffect(() => {
+    
+    const buscarDados = async () => {
+        // ... (código igual ao que fizemos antes) ...
+        // Lembra de manter o ?t=... para evitar cache
     };
+
+    // ... (função buscarEmpregados igual) ...
+
+    buscarEmpregados();
+    buscarDados();
+
+    // INTERVALO INTELIGENTE
+    const intervalo = setInterval(() => {
+        const horaAtual = new Date().getHours();
+        
+        // SÓ BUSCA SE A LOJA ESTIVER ABERTA (Ex: das 7h às 23h)
+        if (horaAtual >= 4 && horaAtual < 21) {
+            buscarDados();
+        } else {
+            console.log("💤 Loja fechada. O banco pode dormir.");
+        }
+    }, 120000); // 60 segundos (Bom equilíbrio)
+
+    return () => clearInterval(intervalo);
+
+  }, []);
 
     // Função para buscar empregados (só precisa rodar uma vez)
     const buscarEmpregados = async () => {
