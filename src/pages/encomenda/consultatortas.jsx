@@ -1,16 +1,15 @@
 import React, { useState, useEffect } from "react";
-// Import do componente de detalhes
 import { DetalhesTortas } from "../../components/DetalhesTortas"; 
 
 function ConsultaTortas() {
   const [encomendas, setEncomendas] = useState([]);
   const [loading, setLoading] = useState(true);
   
-  // State para controlar o modal
   const [encomendaSelecionada, setEncomendaSelecionada] = useState(null);
+  
+  // State para carregando do modal (para não abrir modal vazio enquanto baixa a foto)
+  const [loadingModal, setLoadingModal] = useState(false);
 
-  // CONFIGURAÇÕES
-  const ID_CAMILA = 1;
   const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:3001";
 
   const ST_PRODUCAO = {
@@ -35,7 +34,9 @@ function ConsultaTortas() {
           body: JSON.stringify({ 
               dt_abertura: dataHoje, 
               nm_nomefantasia: "", 
-              nr_telefone: "" 
+              nr_telefone: "",
+              // TRUQUE DE ECONOMIA: Não traz a foto no loop automático!
+              trazerFoto: false 
           }) 
       });
 
@@ -43,16 +44,16 @@ function ConsultaTortas() {
       const data = await response.json();
 
       const minhasEncomendas = data.filter(enc => {
-        const idFuncionario = enc.id_empregado || enc.id_usuarios;
-        
-        // --- NOVO FILTRO AQUI ---
-        // Verifica se:
-        // 1. É da Camila
-        // 2. Não foi entregue ao cliente ainda
-        // 3. É REALMENTE UMA TORTA (tem tamanho maior que 0)
-        const ehTorta = enc.vl_tamanho && parseFloat(enc.vl_tamanho) > 0;
+        const naoEntregue = enc.st_status != 2;
 
-        return idFuncionario === ID_CAMILA && enc.st_status != 2 && ehTorta; 
+        const temTamanho = enc.vl_tamanho && parseFloat(enc.vl_tamanho) > 0;
+        const temRecheio = enc.ds_recheio && enc.ds_recheio.trim().length > 0;
+        const temDecoracao = enc.ds_decoracao && enc.ds_decoracao.trim().length > 0;
+        const temObsTorta = enc.ds_obstortas && enc.ds_obstortas.trim().length > 0;
+
+        const ehTorta = temTamanho || temRecheio || temDecoracao || temObsTorta;
+
+        return naoEntregue && ehTorta; 
       });
 
       const ordenadas = minhasEncomendas.sort((a, b) => {
@@ -72,6 +73,42 @@ function ConsultaTortas() {
       setLoading(false);
     }
   }
+
+  // --- FUNÇÃO PARA ABRIR DETALHES COM FOTO ---
+  const handleAbrirDetalhes = async (encomendaLeve) => {
+    if (encomendaLeve.st_status == 3) return; // Se cancelado, não abre
+
+    setLoadingModal(true);
+    try {
+        // Busca APENAS essa encomenda, mas agora pedindo a FOTO (trazerFoto: true)
+        const idItem = encomendaLeve.id_encomendas || encomendaLeve.id_ordemservicos;
+        
+        const response = await fetch(`${API_URL}/encomendas/filtrar`, { 
+            method: "POST", 
+            headers: { "Content-Type": "application/json" }, 
+            body: JSON.stringify({ 
+                id_ordemservicos: idItem,
+                trazerFoto: true // <--- AQUI PEDIMOS A FOTO PESADA
+            }) 
+        });
+
+        const dadosCompletos = await response.json();
+        
+        if (dadosCompletos && dadosCompletos.length > 0) {
+            setEncomendaSelecionada(dadosCompletos[0]);
+        } else {
+            // Fallback: se der erro, abre a versão sem foto mesmo
+            setEncomendaSelecionada(encomendaLeve);
+        }
+
+    } catch (err) {
+        console.error("Erro ao baixar foto da torta", err);
+        setEncomendaSelecionada(encomendaLeve);
+    } finally {
+        setLoadingModal(false);
+    }
+  };
+
 
   async function alterarStatusProducao(idEncomenda, novoStatus) {
     setEncomendas(prev => prev.map(item => 
@@ -107,7 +144,16 @@ function ConsultaTortas() {
   return (
     <div className="min-h-screen bg-gray-100 pb-20 font-sans">
       
-      {/* MODAL DE DETALHES */}
+      {/* Loading simples enquanto baixa a foto do modal */}
+      {loadingModal && (
+         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
+            <div className="bg-white p-4 rounded-lg flex flex-col items-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-800 mb-2"></div>
+                <span className="text-sm font-bold text-gray-700">Baixando Foto...</span>
+            </div>
+         </div>
+      )}
+
       {encomendaSelecionada && (
         <DetalhesTortas 
             encomenda={encomendaSelecionada} 
@@ -163,7 +209,8 @@ function ConsultaTortas() {
             <div 
                 key={idItem} 
                 className={`relative border-l-[10px] rounded-lg flex flex-col transition-all duration-300 overflow-hidden ${cardClass}`}
-                onClick={() => !isCancelado && setEncomendaSelecionada(enc)}
+                // MUDANÇA: Agora chamamos handleAbrirDetalhes em vez de setEncomendaSelecionada direto
+                onClick={() => handleAbrirDetalhes(enc)}
             >
               
               <div className="p-5 flex gap-4">
@@ -194,7 +241,6 @@ function ConsultaTortas() {
                             <div className="flex items-start gap-2">
                                 <span className="mt-1 w-2 h-2 rounded-full bg-blue-400"></span>
                                 <p className="text-sm font-semibold text-gray-600 leading-snug">
-                                    {/* Mostra o peso se tiver, senão o nome do produto */}
                                     {enc.vl_tamanho ? `${enc.vl_tamanho} kg` : enc.produto_nome || "Ver Detalhes"}
                                 </p>
                             </div>
@@ -203,6 +249,11 @@ function ConsultaTortas() {
                         {enc.ds_observacao && (
                             <p className="text-xs text-red-500 mt-1 ml-4 italic truncate">
                                 ⚠ {enc.ds_observacao}
+                            </p>
+                        )}
+                        {enc.ds_recheio && (
+                             <p className="text-xs text-gray-500 mt-1 ml-4 truncate">
+                                + {enc.ds_recheio}
                             </p>
                         )}
                     </div>

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-// NÃO precisamos mais do useReactToPrint aqui
 import { CupomEncomenda } from "../../components/CupomEncomenda"; 
 
 // --- ÍCONES ---
@@ -34,9 +33,8 @@ function ConsultaEncomenda() {
 
   const [dadosParaImpressao, setDadosParaImpressao] = useState(null); 
 
-  // --- FUNÇÃO DE IMPRESSÃO NATIVA ---
+  // --- FUNÇÃO DE IMPRESSÃO ---
   const handlePrint = () => {
-      // Pequeno delay para garantir que o React renderizou tudo, depois chama a janela do navegador
       setTimeout(() => {
           window.print();
       }, 100);
@@ -49,53 +47,91 @@ function ConsultaEncomenda() {
   const fecharModalImpressao = () => {
       setDadosParaImpressao(null);
   };
-  // ---------------------------
 
   useEffect(() => { handlePesquisar(); }, []);
+  
   const handleChange = (e) => setFiltros({ ...filtros, [e.target.name]: e.target.value });
+  
   const mascaraTelefone = (valor) => {
     valor = valor.replace(/\D/g, "").substring(0, 11);
     if (valor.length <= 10) valor = valor.replace(/^(\d{2})(\d)/, "$1-$2").replace(/-(\d{4})(\d)/, "-$1-$2");
     else valor = valor.replace(/^(\d{2})(\d)/, "$1-$2").replace(/-(\d{5})(\d)/, "-$1-$2");
     return valor;
   };
+  
   const handlePhoneChange = (e) => setFiltros({ ...filtros, nr_telefone: mascaraTelefone(e.target.value) });
 
   const handlePesquisar = async (e) => {
     if(e) e.preventDefault();
-    setLoading(true); setBuscaRealizada(true);
+    setLoading(true); 
+    setBuscaRealizada(true);
+    
     try {
-      const response = await fetch(`${API_URL}/encomendas/filtrar`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(filtros) });
+      const response = await fetch(`${API_URL}/encomendas/filtrar`, { 
+          method: "POST", 
+          headers: { "Content-Type": "application/json" }, 
+          // OTIMIZAÇÃO: Trazemos a lista LEVE (sem a foto pesada)
+          body: JSON.stringify({ ...filtros, trazerFoto: false }) 
+      });
+      
       if (response.ok) setResultados(await response.json());
       else alert("Erro ao buscar.");
     } catch (error) { console.error(error); } finally { setLoading(false); }
   };
 
-const handleStatusChange = async (e, id, novoStatus) => {
+  // --- MUDANÇA IMPORTANTE: PREPARAÇÃO PARA EDIÇÃO ---
+  const handleEditar = async (enc) => {
+    if (enc.st_status == 2 || enc.st_status == 3) {
+       alert("Não é possível editar um pedido que já foi Entregue ou Cancelado.");
+       return; 
+    }
+
+    // 1. Ativa o loading para o usuário saber que estamos buscando os dados
+    setLoading(true);
+
+    try {
+        // 2. Buscamos a encomenda novamente, dessa vez pedindo a FOTO (trazerFoto: true)
+        // Isso garante que a tela de cadastro receba a imagem para exibir no preview.
+        const response = await fetch(`${API_URL}/encomendas/filtrar`, { 
+            method: "POST", 
+            headers: { "Content-Type": "application/json" }, 
+            body: JSON.stringify({ 
+                id_ordemservicos: enc.id_ordemservicos, // Busca pelo ID exato
+                trazerFoto: true // Pede a foto pesada apenas agora!
+            }) 
+        });
+
+        const dadosCompletos = await response.json();
+
+        if (dadosCompletos && dadosCompletos.length > 0) {
+             // 3. Navega passando o objeto COMPLETO (com foto)
+             navigate('/cadastro-encomendas', { state: { encomendaParaEditar: dadosCompletos[0] } });
+        } else {
+             // Fallback: se der erro, tenta ir com o que tem (sem foto)
+             navigate('/cadastro-encomendas', { state: { encomendaParaEditar: enc } });
+        }
+
+    } catch (error) {
+        console.error("Erro ao preparar edição:", error);
+        alert("Erro de conexão ao abrir edição.");
+    } finally {
+        setLoading(false);
+    }
+  }
+
+  const handleStatusChange = async (e, id, novoStatus) => {
     e.stopPropagation();
     
-    // --- DIAGNÓSTICO DE ERRO ---
-    console.log("ID recebido:", id);
     if (!id) {
-        alert("ERRO GRAVE: O ID da encomenda está vazio/undefined. Verifique o banco de dados.");
+        alert("ERRO GRAVE: O ID da encomenda está vazio. Contate o suporte.");
         return;
     }
-    const urlCompleta = `${API_URL}/encomendas/${id}`;
-    console.log("Tentando acessar URL:", urlCompleta);
-    // ---------------------------
-    let msgstatus = "";
-    
-    if (novoStatus === 2) {
-      msgstatus = "Deseja alterar o status para Entregue?"
-    } else {
-       msgstatus = "Deseja cancelar o pedido?"
-    }
-    
 
+    const msgstatus = novoStatus === 2 ? "Deseja alterar o status para Entregue?" : "Deseja cancelar o pedido?";
     if (!window.confirm(msgstatus)) return;
 
     try {
-        const response = await fetch(urlCompleta, { 
+        const response = await fetch(`${API_URL}/encomendas/${id}`, { 
             method: 'PUT', 
             headers: { 'Content-Type': 'application/json' }, 
             body: JSON.stringify({ st_status: novoStatus }) 
@@ -103,15 +139,12 @@ const handleStatusChange = async (e, id, novoStatus) => {
 
         if (response.ok) {
             setResultados(prev => prev.map(item => {
-                if (item.id_ordemservicos == id) {
-                    return { ...item, st_status: novoStatus };
-                }
+                if (item.id_ordemservicos == id) return { ...item, st_status: novoStatus };
                 return item;
             }));
         } else {
-            // Se der 404, ele vai cair aqui
-            console.error("Erro do Servidor:", response.status, response.statusText);
-            alert(`Erro 404: O servidor diz que o endereço não existe.\n\nVerifique se o seu Back-end tem a rota:\napp.put('/encomendas/:id', ...)\n\nURL Tentada: ${urlCompleta}`);
+            console.error("Erro do Servidor:", response.status);
+            alert("Erro ao alterar status.");
         }
     } catch (error) { 
         console.error("Erro de rede:", error);
@@ -119,49 +152,24 @@ const handleStatusChange = async (e, id, novoStatus) => {
     }
   };
     
-  const handleEditar = (enc) => {
-   if (enc.st_status == 2 || enc.st_status == 3) {
-       alert("Não é possível editar um pedido que já foi Entregue ou Cancelado.");
-       return; // Para a execução aqui, não navega
-    }
-
-    navigate('/cadastro-encomendas', { state: { encomendaParaEditar: enc } });
-  }
-
   const handleNovaEncomenda = () => navigate('/cadastro-encomendas');
 
   return (
-    // DIV principal agora
     <div>
-      {/* --- ESTILOS DE IMPRESSÃO (O SEGREDO) --- */}
       <style>
         {`
           @media print {
-            /* Esconde tudo o que tem a classe 'no-print' */
             .no-print { display: none !important; }
-            
-            /* Mostra o que tem a classe 'print-only' */
-            .print-only { 
-                display: block !important; 
-                position: absolute; 
-                top: 0; 
-                left: 0; 
-                width: 100%; 
-                background: white;
-                z-index: 9999;
-            }
-            
-            /* Remove margens da página */
+            .print-only { display: block !important; position: absolute; top: 0; left: 0; width: 100%; background: white; z-index: 9999; }
             @page { margin: 0; }
             body { margin: 0; padding: 0; background: white; }
           }
         `}
       </style>
 
-      {/* --- CONTEÚDO VISUAL DO SITE (ESCONDIDO NA IMPRESSÃO) --- */}
       <div className="flex min-h-screen bg-gray-100 font-sans no-print">
         
-        {/* MODAL DE VISUALIZAÇÃO */}
+        {/* MODAL IMPRESSÃO */}
         {dadosParaImpressao && (
             <div style={{ position: "fixed", inset: 0, zIndex: 9999, backgroundColor: "rgba(0,0,0,0.5)", display: "flex", justifyContent: "center", alignItems: "center" }}>
                 <div className="bg-white p-4 rounded-lg shadow-2xl flex flex-col items-center">
@@ -231,10 +239,6 @@ const handleStatusChange = async (e, id, novoStatus) => {
         </main>
       </div>
 
-      {/* --- ÁREA DE IMPRESSÃO (O ÚNICO LUGAR VISÍVEL NA IMPRESSÃO) --- */}
-      {/* A classe 'hidden' do tailwind esconde na tela.
-          A classe 'print-only' força display:block na impressão (veja o estilo lá em cima).
-      */}
       <div className="print-only hidden">
           <CupomEncomenda dados={dadosParaImpressao || {}} />
       </div>
