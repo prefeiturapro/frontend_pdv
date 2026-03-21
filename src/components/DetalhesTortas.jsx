@@ -69,7 +69,7 @@ export const DetalhesTortas = ({ encomenda, onClose }) => {
               <div className="flex flex-col items-center justify-center py-3 bg-yellow-400 text-yellow-900">
                 <span className="text-[10px] font-bold uppercase tracking-widest opacity-80">Tamanho</span>
                 <span className="text-2xl sm:text-3xl font-black leading-none mt-0.5">
-                  {encomenda.vl_tamanho}
+                  {parseFloat(encomenda.vl_tamanho).toFixed(1).replace(".", ",")}
                 </span>
                 <span className="text-xs font-bold opacity-80">kg</span>
               </div>
@@ -128,7 +128,7 @@ export const DetalhesTortas = ({ encomenda, onClose }) => {
               <h3 className="text-xs font-extrabold text-yellow-700 uppercase tracking-wider mb-1">
                 🍰 Recheio / Sabor
               </h3>
-              <p className="text-base sm:text-lg font-bold text-gray-800 leading-snug">
+              <p className="text-2xl sm:text-3xl font-black text-gray-800 leading-snug">
                 {encomenda.ds_recheio || "Padrão / Não informado"}
               </p>
             </div>
@@ -139,7 +139,7 @@ export const DetalhesTortas = ({ encomenda, onClose }) => {
                 <h3 className="text-xs font-extrabold text-purple-700 uppercase tracking-wider mb-1">
                   🎨 Decoração / Tema
                 </h3>
-                <p className="text-base sm:text-lg font-bold text-gray-800 leading-snug">
+                <p className="text-2xl sm:text-3xl font-black text-gray-800 leading-snug">
                   {encomenda.ds_decoracao}
                 </p>
               </div>
@@ -167,7 +167,7 @@ export const DetalhesTortas = ({ encomenda, onClose }) => {
                   </svg>
                   Observações
                 </h3>
-                <p className="text-red-800 font-medium text-sm leading-relaxed">
+                <p className="text-red-800 font-black text-2xl sm:text-3xl leading-snug">
                   {encomenda.ds_obstortas}
                 </p>
               </div>
