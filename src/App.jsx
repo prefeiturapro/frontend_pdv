@@ -9,6 +9,9 @@ import CadastroEncomenda from "./pages/encomenda/cadastroencomenda";
 import ConsultaEncomenda from "./pages/encomenda/consultaencomenda";
 import ConsultaTortas from "./pages/encomenda/consultatortas";
 import Usuarios from "./pages/admin/usuarios";
+import Formularios from "./pages/admin/formularios";
+import Responsavel from "./pages/admin/responsavel";
+import Empregados  from "./pages/admin/empregados";
 import RotaPrivada from './components/RotaPrivada';
 
 function App() {
@@ -30,6 +33,9 @@ function App() {
           <Route path="/encomendas/consulta" element={<ConsultaEncomenda />} />
           <Route path="/tortas" element={<ConsultaTortas />} />
           <Route path="/admin/usuarios" element={<Usuarios />} />
+          <Route path="/admin/formularios" element={<Formularios />} />
+          <Route path="/admin/responsavel" element={<Responsavel />} />
+          <Route path="/admin/empregados"  element={<Empregados />} />
 
         </Route>
       </Routes>
