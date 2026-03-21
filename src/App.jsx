@@ -8,6 +8,7 @@ import Home from "./pages/home";
 import CadastroEncomenda from "./pages/encomenda/cadastroencomenda";
 import ConsultaEncomenda from "./pages/encomenda/consultaencomenda";
 import ConsultaTortas from "./pages/encomenda/consultatortas";
+import Usuarios from "./pages/admin/usuarios";
 import RotaPrivada from './components/RotaPrivada';
 
 function App() {
@@ -28,7 +29,8 @@ function App() {
           <Route path="/cadastro-encomendas" element={<CadastroEncomenda />} /> 
           <Route path="/encomendas/consulta" element={<ConsultaEncomenda />} />
           <Route path="/tortas" element={<ConsultaTortas />} />
-          
+          <Route path="/admin/usuarios" element={<Usuarios />} />
+
         </Route>
       </Routes>
     </BrowserRouter>
