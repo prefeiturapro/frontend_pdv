@@ -1,10 +1,75 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import logo_cafe_francesa from '../../assets/imagem/logo_cafe_pequena.png';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+
+// Mapeamento: nm_form (bauhaus.forms) → rota
+const ITENS_ADMIN = [
+  {
+    nm_form: 'cadastrousuarios',
+    label: 'Cadastro de Usuários',
+    rota: '/admin/usuarios',
+    icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z'
+  },
+  {
+    nm_form: 'cadastroformularios',
+    label: 'Cadastro de Formulários',
+    rota: '/admin/formularios',
+    icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'
+  },
+  {
+    nm_form: 'responsavelproduto',
+    label: 'Responsável pelo Produto',
+    rota: '/admin/responsavel',
+    icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z'
+  },
+  {
+    nm_form: 'cadastroempregados',
+    label: 'Cadastro de Empregados',
+    rota: '/admin/empregados',
+    icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z'
+  }
+];
+
 function Menu() {
   const navigate = useNavigate();
-  const [menuAberto, setMenuAberto] = useState(false);
+  const [menuAberto, setMenuAberto]         = useState(false);
+  const [formsPermitidos, setFormsPermitidos] = useState(new Set());
+  const [carregandoPerms, setCarregandoPerms] = useState(true);
+
+  const usuarioLogado = (() => {
+    try { return JSON.parse(sessionStorage.getItem('usuario_logado')); }
+    catch { return null; }
+  })();
+
+  // Carrega permissões do usuário logado ao montar
+  useEffect(() => {
+    if (!usuarioLogado?.id_usuarios) {
+      setCarregandoPerms(false);
+      return;
+    }
+    fetch(`${API_URL}/forms-usuarios/usuario/${usuarioLogado.id_usuarios}`)
+      .then(res => res.json())
+      .then(data => {
+        const permitidos = new Set();
+        if (Array.isArray(data)) {
+          data.forEach(p => {
+            if (p.acessar?.trim() === 'S') {
+              permitidos.add(p.nm_form?.toLowerCase());
+            }
+          });
+        }
+        setFormsPermitidos(permitidos);
+      })
+      .catch(() => setFormsPermitidos(new Set()))
+      .finally(() => setCarregandoPerms(false));
+  }, []);
+
+  const temAcesso = (nm_form) => formsPermitidos.has(nm_form.toLowerCase());
+
+  const itensVisiveis = ITENS_ADMIN.filter(item => temAcesso(item.nm_form));
+  const temQualquerAdmin = itensVisiveis.length > 0;
 
   const handleLogout = () => {
     sessionStorage.removeItem('usuario_logado');
@@ -32,55 +97,39 @@ function Menu() {
           </button>
 
           {menuAberto && (
-            <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg py-1 z-50 border border-gray-200 overflow-hidden">
+            <div className="absolute right-0 mt-2 w-60 bg-white rounded-xl shadow-lg py-1 z-50 border border-gray-200 overflow-hidden">
 
-              {/* Seção Admin */}
-              <div className="px-4 py-2 text-xs font-bold text-gray-400 uppercase tracking-wider border-b bg-gray-50">
-                Administração
-              </div>
+              {/* Seção Admin — só exibe se houver ao menos um item permitido */}
+              {carregandoPerms ? (
+                <div className="px-4 py-3 flex items-center gap-2 text-xs text-gray-400">
+                  <svg className="animate-spin w-3 h-3" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                  </svg>
+                  Verificando permissões...
+                </div>
+              ) : temQualquerAdmin && (
+                <>
+                  <div className="px-4 py-2 text-xs font-bold text-gray-400 uppercase tracking-wider border-b bg-gray-50">
+                    Administração
+                  </div>
 
-              <button
-                onClick={() => { setMenuAberto(false); navigate('/admin/usuarios'); }}
-                className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-900 flex items-center gap-2 transition-colors"
-              >
-                <svg className="w-4 h-4 text-amber-700 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                </svg>
-                Cadastro de Usuários
-              </button>
+                  {itensVisiveis.map(item => (
+                    <button
+                      key={item.nm_form}
+                      onClick={() => { setMenuAberto(false); navigate(item.rota); }}
+                      className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-900 flex items-center gap-2 transition-colors"
+                    >
+                      <svg className="w-4 h-4 text-amber-700 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={item.icon} />
+                      </svg>
+                      {item.label}
+                    </button>
+                  ))}
 
-              <button
-                onClick={() => { setMenuAberto(false); navigate('/admin/formularios'); }}
-                className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-900 flex items-center gap-2 transition-colors"
-              >
-                <svg className="w-4 h-4 text-amber-700 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                Cadastro de Formulários
-              </button>
-
-              <button
-                onClick={() => { setMenuAberto(false); navigate('/admin/responsavel'); }}
-                className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-900 flex items-center gap-2 transition-colors"
-              >
-                <svg className="w-4 h-4 text-amber-700 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-                Responsável pelo Produto
-              </button>
-
-              <button
-                onClick={() => { setMenuAberto(false); navigate('/admin/empregados'); }}
-                className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-900 flex items-center gap-2 transition-colors"
-              >
-                <svg className="w-4 h-4 text-amber-700 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                Cadastro de Empregados
-              </button>
-
-              {/* Divisor */}
-              <div className="border-t my-1" />
+                  <div className="border-t my-1" />
+                </>
+              )}
 
               {/* Sair */}
               <button

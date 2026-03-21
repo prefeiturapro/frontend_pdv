@@ -263,6 +263,9 @@ function CadastroEncomenda() {
     
     const dadosParaEnviar = { ...formData };
 
+    const usuarioLogado = (() => { try { return JSON.parse(sessionStorage.getItem('usuario_logado')); } catch { return null; } })();
+    dadosParaEnviar.id_usuarios = usuarioLogado?.id_usuarios || null;
+
     if (!dadosParaEnviar.dt_agendamento) {
         const hoje = new Date();
         dadosParaEnviar.dt_agendamento = hoje.toISOString().split('T')[0];
@@ -468,24 +471,73 @@ function CadastroEncomenda() {
               )}
 
               {/* ABA SALGADOS */}
-              {abaAtiva === "salgados" && (
-                  <div className="animate-fadeIn">
-                      <div className="bg-yellow-50 border border-yellow-100 rounded-lg p-4 mb-6 flex items-start gap-3"><div className="p-2 bg-yellow-100 rounded-full text-yellow-600"><IconCakeMenu /></div><div><h3 className="text-sm font-bold text-yellow-800">Salgadinhos de Festa</h3><p className="text-xs text-yellow-700">Informe a quantidade (UN) desejada para cada tipo.</p></div></div>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-6">
-                          <UnitInput label="Risoles de Frango" name="vl_risfrango" value={formData.vl_risfrango} onChange={handleChange} />
-                          <UnitInput label="Risoles Presunto e Queijo" name="vl_rispresque" value={formData.vl_rispresque} onChange={handleChange} />
-                          <UnitInput label="Coxinha" name="vl_coxinha" value={formData.vl_coxinha} onChange={handleChange} />
-                          <UnitInput label="Pastel de Carne" name="vl_pastelcar" value={formData.vl_pastelcar} onChange={handleChange} />
-                          <UnitInput label="Pastel de Banana" name="vl_pastelban" value={formData.vl_pastelban} onChange={handleChange} />
-                          <UnitInput label="Salsicha" name="vl_salsic" value={formData.vl_salsic} onChange={handleChange} />
-                          <UnitInput label="Quibe" name="vl_quibe" value={formData.vl_quibe} onChange={handleChange} />
-                          <UnitInput label="Bolinha de Queijo" name="vl_bolquei" value={formData.vl_bolquei} onChange={handleChange} />
-                          <UnitInput label="Risoles de Palmito" name="vl_rispalm" value={formData.vl_rispalm} onChange={handleChange} />
-                          <UnitInput label="Pastel de Milho" name="vl_pastmil" value={formData.vl_pastmil} onChange={handleChange} />
+              {abaAtiva === "salgados" && (() => {
+                  const itensSalgados = [
+                      { label: "Risoles de Frango",        campo: "vl_risfrango"  },
+                      { label: "Risoles Presunto e Queijo", campo: "vl_rispresque" },
+                      { label: "Coxinha",                  campo: "vl_coxinha"    },
+                      { label: "Pastel de Carne",          campo: "vl_pastelcar"  },
+                      { label: "Pastel de Banana",         campo: "vl_pastelban"  },
+                      { label: "Salsicha",                 campo: "vl_salsic"     },
+                      { label: "Quibe",                    campo: "vl_quibe"      },
+                      { label: "Bolinha de Queijo",        campo: "vl_bolquei"    },
+                      { label: "Risoles de Palmito",       campo: "vl_rispalm"    },
+                      { label: "Pastel de Milho",          campo: "vl_pastmil"    },
+                  ];
+                  const totalSalgados = itensSalgados.reduce((acc, item) => {
+                      const v = parseFloat(formData[item.campo]) || 0;
+                      return acc + v;
+                  }, 0);
+                  const itensComValor = itensSalgados.filter(item => (parseFloat(formData[item.campo]) || 0) > 0);
+
+                  return (
+                      <div className="animate-fadeIn">
+                          <div className="bg-yellow-50 border border-yellow-100 rounded-lg p-4 mb-4 flex items-start gap-3">
+                              <div className="p-2 bg-yellow-100 rounded-full text-yellow-600"><IconCakeMenu /></div>
+                              <div>
+                                  <h3 className="text-sm font-bold text-yellow-800">Salgadinhos de Festa</h3>
+                                  <p className="text-xs text-yellow-700">Informe a quantidade (UN) desejada para cada tipo.</p>
+                              </div>
+                          </div>
+
+                          {/* ── Totalizador ── */}
+                          <div className={`mb-6 rounded-xl border-2 p-4 transition-all duration-300 ${totalSalgados > 0 ? "border-orange-300 bg-orange-50" : "border-gray-200 bg-gray-50"}`}>
+                              <div className="flex items-center justify-between mb-2">
+                                  <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Total de Salgadinhos</span>
+                                  <span className={`text-2xl font-black tabular-nums transition-all duration-200 ${totalSalgados > 0 ? "text-orange-600" : "text-gray-300"}`}>
+                                      {totalSalgados} <span className="text-sm font-bold">UN</span>
+                                  </span>
+                              </div>
+                              {itensComValor.length > 0 ? (
+                                  <div className="flex flex-wrap gap-2 mt-1">
+                                      {itensComValor.map(item => (
+                                          <span key={item.campo}
+                                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-orange-100 text-orange-800 border border-orange-200">
+                                              {item.label}
+                                              <span className="bg-orange-500 text-white rounded-full px-1.5 py-0 text-[10px] font-black ml-0.5">
+                                                  {parseFloat(formData[item.campo])}
+                                              </span>
+                                          </span>
+                                      ))}
+                                  </div>
+                              ) : (
+                                  <p className="text-xs text-gray-400 italic">Nenhum salgadinho informado ainda.</p>
+                              )}
+                          </div>
+
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-6">
+                              {itensSalgados.map(item => (
+                                  <UnitInput key={item.campo} label={item.label} name={item.campo} value={formData[item.campo]} onChange={handleChange} />
+                              ))}
+                          </div>
+                          <div className="mt-8 border-t border-gray-100 pt-6">
+                              <label className="block text-sm font-bold text-gray-700 mb-1">Observações dos Salgados</label>
+                              <textarea name="ds_obssalg" value={formData.ds_obssalg} onChange={handleChange} rows={4}
+                                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 resize-none bg-gray-50" />
+                          </div>
                       </div>
-                      <div className="mt-8 border-t border-gray-100 pt-6"><label className="block text-sm font-bold text-gray-700 mb-1">Observações dos Salgados</label><textarea name="ds_obssalg" value={formData.ds_obssalg} onChange={handleChange} rows={4} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 resize-none bg-gray-50" /></div>
-                  </div>
-              )}
+                  );
+              })()}
 
               {/* ABA MINI'S */}
               {abaAtiva === "minis" && (

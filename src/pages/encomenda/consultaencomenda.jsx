@@ -130,11 +130,20 @@ function ConsultaEncomenda() {
     const msgstatus = novoStatus === 2 ? "Deseja alterar o status para Entregue?" : "Deseja cancelar o pedido?";
     if (!window.confirm(msgstatus)) return;
 
+    const usuarioLogado = (() => { try { return JSON.parse(sessionStorage.getItem('usuario_logado')); } catch { return null; } })();
+    const id_usuario = usuarioLogado?.id_usuarios || null;
+
+    const horaAtual = new Date().toTimeString().slice(0, 8); // HH:MM:SS
+
+    const payload = { st_status: novoStatus };
+    if (novoStatus === 2) { payload.id_usuariofec = id_usuario; payload.hr_entrega = horaAtual; }
+    if (novoStatus === 3) { payload.id_usuariocanc = id_usuario; payload.hr_cancelamento = horaAtual; }
+
     try {
-        const response = await fetch(`${API_URL}/encomendas/${id}`, { 
-            method: 'PUT', 
-            headers: { 'Content-Type': 'application/json' }, 
-            body: JSON.stringify({ st_status: novoStatus }) 
+        const response = await fetch(`${API_URL}/encomendas/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
         });
 
         if (response.ok) {
