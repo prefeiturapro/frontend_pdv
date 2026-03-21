@@ -424,26 +424,47 @@ function ConsultaTortas() {
                     </h3>
                   </div>
 
-                  <div className="mt-3 pt-3 border-t border-dashed border-gray-200">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-start gap-2">
-                        <span className={`mt-1 w-2 h-2 rounded-full shrink-0 ${euSouResponsavel ? "bg-amber-400" : "bg-blue-400"}`}></span>
-                        <p className="text-sm font-semibold text-gray-600 leading-snug">
-                          {enc.vl_tamanho ? `${enc.vl_tamanho} kg` : enc.produto_nome || "Ver Detalhes"}
+                  <div className="mt-3 pt-3 border-t border-dashed border-gray-200 space-y-2">
+
+                    {/* Tamanho */}
+                    {enc.vl_tamanho && parseFloat(enc.vl_tamanho) > 0 && (
+                      <div className="flex items-center gap-2">
+                        <span className={`w-2 h-2 rounded-full shrink-0 ${euSouResponsavel ? "bg-amber-400" : "bg-blue-400"}`}></span>
+                        <p className="text-base font-bold text-gray-700">
+                          {parseFloat(enc.vl_tamanho).toFixed(1).replace(".", ",")} kg
                         </p>
+                        {!estaConfirmando && (
+                          <svg className="w-5 h-5 text-gray-400 shrink-0 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                          </svg>
+                        )}
                       </div>
-                      {!estaConfirmando && (
-                        <svg className="w-5 h-5 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
-                        </svg>
-                      )}
-                    </div>
-                    {enc.ds_observacao && (
-                      <p className="text-xs text-red-500 mt-1 ml-4 italic truncate">⚠ {enc.ds_observacao}</p>
                     )}
+
+                    {/* Recheio */}
                     {enc.ds_recheio && (
-                      <p className="text-xs text-gray-500 mt-1 ml-4 truncate">+ {enc.ds_recheio}</p>
+                      <p className="text-base font-semibold text-gray-700 leading-snug">
+                        <span className="text-[10px] font-bold uppercase text-gray-400 mr-1">Recheio:</span>
+                        {enc.ds_recheio}
+                      </p>
                     )}
+
+                    {/* Decoração */}
+                    {enc.ds_decoracao && (
+                      <p className="text-base font-semibold text-gray-700 leading-snug">
+                        <span className="text-[10px] font-bold uppercase text-gray-400 mr-1">Decoração:</span>
+                        {enc.ds_decoracao}
+                      </p>
+                    )}
+
+                    {/* Observação */}
+                    {enc.ds_obstortas && (
+                      <p className="text-base font-semibold text-red-600 leading-snug">
+                        <span className="text-[10px] font-bold uppercase text-red-400 mr-1">⚠ Obs:</span>
+                        {enc.ds_obstortas}
+                      </p>
+                    )}
+
                   </div>
                 </div>
               </div>
