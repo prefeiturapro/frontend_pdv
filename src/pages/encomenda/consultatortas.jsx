@@ -383,11 +383,9 @@ function ConsultaTortas() {
           return (
             <div
               key={id}
-              className={`relative border-l-[10px] rounded-lg flex flex-col transition-all duration-300 overflow-hidden shadow-sm
+              className={`relative border-l-[10px] rounded-lg overflow-hidden shadow-sm transition-all duration-300
                 ${cardBg} ${cardBorderColor}
-                ${!isCancelado && !estaConfirmando ? "cursor-pointer hover:shadow-md hover:translate-x-1" : ""}
-                ${isCancelado ? "opacity-60 grayscale cursor-default" : ""}`}
-              onClick={() => !estaConfirmando && handleAbrirDetalhes(enc)}
+                ${isCancelado ? "opacity-60 grayscale" : ""}`}
             >
               {/* Badge "Minha responsabilidade" */}
               {euSouResponsavel && (
@@ -396,155 +394,152 @@ function ConsultaTortas() {
                 </div>
               )}
 
-              <div className="p-5 flex gap-4">
-                {/* Coluna de hora/data */}
-                <div className="flex flex-col items-center justify-start min-w-[80px] border-r border-gray-100 pr-4">
-                  <span className={`text-3xl font-black tracking-tighter ${isPronto ? "text-green-700" : euSouResponsavel ? "text-amber-700" : "text-gray-800"}`}>
-                    {horaEntrega}
-                  </span>
-                  <span className="text-[10px] font-bold text-gray-400 uppercase mt-1 text-center leading-tight">
-                    {dataEntrega}
-                  </span>
-                  {isPronto && (
-                    <div className="mt-2 bg-green-100 text-green-700 p-1 rounded-full">
-                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                      </svg>
-                    </div>
-                  )}
-                </div>
+              <div className="flex">
 
-                {/* Conteúdo */}
-                <div className="flex-1">
-                  <div className="mb-1">
+                {/* ── Área principal (clicável para detalhes) ── */}
+                <div
+                  className={`flex-1 flex gap-4 p-4 min-w-0 ${!isCancelado ? "cursor-pointer" : "cursor-default"}`}
+                  onClick={() => !isCancelado && handleAbrirDetalhes(enc)}
+                >
+                  {/* Coluna hora/data */}
+                  <div className="flex flex-col items-center justify-start min-w-[72px] border-r border-gray-100 pr-3 shrink-0">
+                    <span className={`text-3xl font-black tracking-tighter ${isPronto ? "text-green-700" : euSouResponsavel ? "text-amber-700" : "text-gray-800"}`}>
+                      {horaEntrega}
+                    </span>
+                    <span className="text-[10px] font-bold text-gray-400 uppercase mt-1 text-center leading-tight">
+                      {dataEntrega}
+                    </span>
+                    {isPronto && (
+                      <div className="mt-2 bg-green-100 text-green-700 p-1 rounded-full">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Conteúdo */}
+                  <div className="flex-1 min-w-0">
                     <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">CLIENTE / DESTINO</span>
-                    <h3 className={`text-xl font-bold leading-tight uppercase
+                    <h3 className={`text-xl font-bold leading-tight uppercase truncate
                       ${isPronto ? "text-green-900" : euSouResponsavel ? "text-amber-900" : "text-blue-900"}`}>
                       {nomeCliente}
                     </h3>
-                  </div>
 
-                  <div className="mt-3 pt-3 border-t border-dashed border-gray-200 space-y-2">
-
-                    {/* Tamanho */}
-                    {enc.vl_tamanho && parseFloat(enc.vl_tamanho) > 0 && (
-                      <div className="flex items-center gap-2">
-                        <span className={`w-2 h-2 rounded-full shrink-0 ${euSouResponsavel ? "bg-amber-400" : "bg-blue-400"}`}></span>
+                    <div className="mt-2 pt-2 border-t border-dashed border-gray-200 space-y-1.5">
+                      {enc.vl_tamanho && parseFloat(enc.vl_tamanho) > 0 && (
                         <p className="text-base font-bold text-gray-700">
+                          <span className={`inline-block w-2 h-2 rounded-full mr-2 ${euSouResponsavel ? "bg-amber-400" : "bg-blue-400"}`}></span>
                           {parseFloat(enc.vl_tamanho).toFixed(1).replace(".", ",")} kg
                         </p>
-                        {!estaConfirmando && (
-                          <svg className="w-5 h-5 text-gray-400 shrink-0 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
-                          </svg>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Recheio */}
-                    {enc.ds_recheio && (
-                      <p className="text-base font-semibold text-gray-700 leading-snug">
-                        <span className="text-[10px] font-bold uppercase text-gray-400 mr-1">Recheio:</span>
-                        {enc.ds_recheio}
-                      </p>
-                    )}
-
-                    {/* Decoração */}
-                    {enc.ds_decoracao && (
-                      <p className="text-base font-semibold text-gray-700 leading-snug">
-                        <span className="text-[10px] font-bold uppercase text-gray-400 mr-1">Decoração:</span>
-                        {enc.ds_decoracao}
-                      </p>
-                    )}
-
-                    {/* Observação */}
-                    {enc.ds_obstortas && (
-                      <p className="text-base font-semibold text-red-600 leading-snug">
-                        <span className="text-[10px] font-bold uppercase text-red-400 mr-1">⚠ Obs:</span>
-                        {enc.ds_obstortas}
-                      </p>
-                    )}
-
+                      )}
+                      {enc.ds_recheio && (
+                        <p className="text-sm font-semibold text-gray-700 leading-snug">
+                          <span className="text-[10px] font-bold uppercase text-gray-400 mr-1">Recheio:</span>
+                          {enc.ds_recheio}
+                        </p>
+                      )}
+                      {enc.ds_decoracao && (
+                        <p className="text-sm font-semibold text-gray-700 leading-snug">
+                          <span className="text-[10px] font-bold uppercase text-gray-400 mr-1">Decoração:</span>
+                          {enc.ds_decoracao}
+                        </p>
+                      )}
+                      {enc.ds_obstortas && (
+                        <p className="text-sm font-semibold text-red-600 leading-snug">
+                          <span className="text-[10px] font-bold uppercase text-red-400 mr-1">⚠ Obs:</span>
+                          {enc.ds_obstortas}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Faixa de responsabilidade do dia */}
-              {!isCancelado && (
-                <div
-                  className="mx-4 mb-3"
-                  onClick={e => e.stopPropagation()}
-                >
-                  {euSouResponsavel ? (
-                    <div className="flex items-center justify-between bg-amber-100 border border-amber-300 rounded-lg px-3 py-2">
-                      <span className="text-xs font-bold text-amber-800">✓ Responsável: Você</span>
+                {/* ── Faixa lateral de ações (direita) ── */}
+                {!isCancelado && (
+                  <div className="flex flex-col shrink-0 w-20 border-l border-gray-200" onClick={e => e.stopPropagation()}>
+
+                    {/* Botão Assumir / Responsável */}
+                    {euSouResponsavel ? (
                       <button
                         onClick={() => removerResponsabilidade(enc)}
                         disabled={estaAtribuindo}
-                        className="text-xs text-amber-600 hover:text-red-600 font-semibold underline transition-colors disabled:opacity-50"
+                        className="flex-1 flex flex-col items-center justify-center gap-1 bg-amber-100 hover:bg-amber-200 text-amber-800 transition-colors disabled:opacity-50 border-b border-amber-200 px-1"
                       >
-                        {estaAtribuindo ? "Removendo..." : "Remover"}
+                        <span className="text-lg leading-none">★</span>
+                        <span className="text-[10px] font-black uppercase leading-tight text-center">
+                          {estaAtribuindo ? "..." : "Remover"}
+                        </span>
                       </button>
-                    </div>
-                  ) : outroResponsavel ? (
-                    <div className="flex items-center bg-gray-100 border border-gray-200 rounded-lg px-3 py-2">
-                      <span className="text-xs text-gray-500">
-                        Responsável: <strong>{respDia.nm_nomefantasia || "Outro empregado"}</strong>
+                    ) : outroResponsavel ? (
+                      <div className="flex-1 flex flex-col items-center justify-center gap-1 bg-gray-50 text-gray-400 border-b border-gray-200 px-1">
+                        <span className="text-lg leading-none">🔒</span>
+                        <span className="text-[10px] font-bold uppercase leading-tight text-center line-clamp-2">
+                          {respDia.nm_nomefantasia?.split(" ")[0] || "Outro"}
+                        </span>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => assumirResponsabilidade(enc)}
+                        disabled={estaAtribuindo}
+                        className="flex-1 flex flex-col items-center justify-center gap-1 bg-blue-50 hover:bg-blue-100 text-blue-700 transition-colors disabled:opacity-50 border-b border-blue-100 px-1"
+                      >
+                        <span className="text-2xl leading-none font-bold">＋</span>
+                        <span className="text-[10px] font-black uppercase leading-tight text-center">
+                          {estaAtribuindo ? "..." : "Assumir"}
+                        </span>
+                      </button>
+                    )}
+
+                    {/* Botão Marcar como Pronto */}
+                    <button
+                      onClick={e => {
+                        e.stopPropagation();
+                        if (isPronto) alterarStatusProducao(id, ST_PRODUCAO.EM_PRODUCAO);
+                        else setConfirmando(estaConfirmando ? null : id);
+                      }}
+                      className={`flex-1 flex flex-col items-center justify-center gap-1 transition-colors px-1
+                        ${isPronto
+                          ? "bg-gray-100 hover:bg-gray-200 text-gray-500"
+                          : estaConfirmando
+                            ? "bg-amber-100 text-amber-700"
+                            : "bg-green-500 hover:bg-green-600 text-white"
+                        }`}
+                    >
+                      <span className="text-xl leading-none">
+                        {isPronto ? "↩" : estaConfirmando ? "✕" : "✓"}
                       </span>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => assumirResponsabilidade(enc)}
-                      disabled={estaAtribuindo}
-                      className="w-full py-2 rounded-lg border-2 border-dashed border-blue-300 text-blue-600 hover:bg-blue-50 hover:border-blue-400 text-xs font-bold uppercase tracking-wide transition-colors disabled:opacity-50"
-                    >
-                      {estaAtribuindo ? "Assumindo..." : "＋ Assumir responsabilidade por esta torta"}
+                      <span className="text-[10px] font-black uppercase leading-tight text-center">
+                        {isPronto ? "Voltar" : estaConfirmando ? "Cancelar" : "Pronto"}
+                      </span>
                     </button>
-                  )}
-                </div>
-              )}
 
-              {/* Confirmação inline */}
-              {estaConfirmando && (
-                <div className="mx-4 mb-3 bg-amber-50 border border-amber-300 rounded-lg p-3 flex flex-col gap-2"
-                  onClick={e => e.stopPropagation()}>
-                  <p className="text-sm font-bold text-amber-800 text-center">⚠️ Confirmar como pronto?</p>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={e => { e.stopPropagation(); setConfirmando(null); }}
-                      className="flex-1 py-2 rounded-lg border border-gray-300 bg-white text-gray-600 font-bold text-sm hover:bg-gray-50"
-                    >
-                      Cancelar
-                    </button>
-                    <button
-                      onClick={e => { e.stopPropagation(); alterarStatusProducao(id, ST_PRODUCAO.PRONTO); }}
-                      className="flex-1 py-2 rounded-lg bg-green-600 text-white font-bold text-sm hover:bg-green-700"
-                    >
-                      ✓ Confirmar
-                    </button>
                   </div>
+                )}
+              </div>
+
+              {/* Confirmação inline — aparece abaixo do card ao confirmar */}
+              {estaConfirmando && (
+                <div
+                  className="border-t border-amber-200 bg-amber-50 px-4 py-3 flex items-center gap-3"
+                  onClick={e => e.stopPropagation()}
+                >
+                  <p className="text-sm font-bold text-amber-800 flex-1">⚠️ Confirmar como pronto?</p>
+                  <button
+                    onClick={e => { e.stopPropagation(); setConfirmando(null); }}
+                    className="px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-600 font-bold text-sm"
+                  >
+                    Não
+                  </button>
+                  <button
+                    onClick={e => { e.stopPropagation(); alterarStatusProducao(id, ST_PRODUCAO.PRONTO); }}
+                    className="px-4 py-2 rounded-lg bg-green-600 text-white font-bold text-sm"
+                  >
+                    ✓ Sim
+                  </button>
                 </div>
               )}
 
-              {/* Botão Marcar como Pronto / Voltar */}
-              {!isCancelado && (
-                <button
-                  onClick={e => {
-                    e.stopPropagation();
-                    if (isPronto) alterarStatusProducao(id, ST_PRODUCAO.EM_PRODUCAO);
-                    else setConfirmando(estaConfirmando ? null : id);
-                  }}
-                  className={`w-full py-3 font-bold text-sm uppercase tracking-wider transition-colors flex items-center justify-center gap-2
-                    ${isPronto
-                      ? "bg-gray-200 text-gray-500 hover:bg-gray-300"
-                      : estaConfirmando
-                        ? "bg-amber-100 text-amber-700"
-                        : "bg-green-600 text-white hover:bg-green-700 active:bg-green-800"
-                    }`}
-                >
-                  {isPronto ? <>↩ Voltar para Produção</> : estaConfirmando ? <>✕ Cancelar</> : <>✓ Marcar como Pronto</>}
-                </button>
-              )}
             </div>
           );
         })}
