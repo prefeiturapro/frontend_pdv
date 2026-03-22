@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { DetalhesTortas } from "../../components/DetalhesTortas";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:3001";
