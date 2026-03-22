@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { DetalhesTortas } from "../../components/DetalhesTortas";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:3001";
@@ -477,28 +477,35 @@ function ConsultaTortas() {
                       </button>
                     )}
 
-                    {/* Botão Marcar como Pronto */}
-                    <button
-                      onClick={e => {
-                        e.stopPropagation();
-                        if (isPronto) alterarStatusProducao(id, ST_PRODUCAO.EM_PRODUCAO);
-                        else setConfirmando(estaConfirmando ? null : id);
-                      }}
-                      className={`flex-1 flex flex-col items-center justify-center gap-1 transition-colors px-1
-                        ${isPronto
-                          ? "bg-gray-100 hover:bg-gray-200 text-gray-500"
-                          : estaConfirmando
-                            ? "bg-amber-100 text-amber-700"
-                            : "bg-green-500 hover:bg-green-600 text-white"
-                        }`}
-                    >
-                      <span className="text-xl leading-none">
-                        {isPronto ? "↩" : estaConfirmando ? "✕" : "✓"}
-                      </span>
-                      <span className="text-[10px] font-black uppercase leading-tight text-center">
-                        {isPronto ? "Voltar" : estaConfirmando ? "Cancelar" : "Pronto"}
-                      </span>
-                    </button>
+                    {/* Botão Marcar como Pronto — só para o responsável */}
+                    {euSouResponsavel ? (
+                      <button
+                        onClick={e => {
+                          e.stopPropagation();
+                          if (isPronto) alterarStatusProducao(id, ST_PRODUCAO.EM_PRODUCAO);
+                          else setConfirmando(estaConfirmando ? null : id);
+                        }}
+                        className={`flex-1 flex flex-col items-center justify-center gap-1 transition-colors px-1
+                          ${isPronto
+                            ? "bg-gray-100 hover:bg-gray-200 text-gray-500"
+                            : estaConfirmando
+                              ? "bg-amber-100 text-amber-700"
+                              : "bg-green-500 hover:bg-green-600 text-white"
+                          }`}
+                      >
+                        <span className="text-xl leading-none">
+                          {isPronto ? "↩" : estaConfirmando ? "✕" : "✓"}
+                        </span>
+                        <span className="text-[10px] font-black uppercase leading-tight text-center">
+                          {isPronto ? "Voltar" : estaConfirmando ? "Cancelar" : "Pronto"}
+                        </span>
+                      </button>
+                    ) : (
+                      <div className="flex-1 flex flex-col items-center justify-center bg-gray-50 text-gray-300 px-1">
+                        <span className="text-xl leading-none">✓</span>
+                        <span className="text-[10px] font-black uppercase leading-tight text-center">Pronto</span>
+                      </div>
+                    )}
 
                   </div>
                 )}
