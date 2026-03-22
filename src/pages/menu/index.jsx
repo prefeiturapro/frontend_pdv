@@ -4,6 +4,34 @@ import logo_cafe_francesa from '../../assets/imagem/logo_cafe_pequena.png';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
+// Botões principais do menu
+const ITENS_PRINCIPAL = [
+  {
+    nm_form: 'consultaencomenda',
+    label: 'CONSULTA DE\nENCOMENDAS',
+    rota: '/encomendas/consulta',
+    corFrom: 'from-red-500', corTo: 'to-red-700',
+    corHoverFrom: 'hover:from-red-600', corHoverTo: 'hover:to-red-800',
+    icon: 'M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'
+  },
+  {
+    nm_form: 'painelenc',
+    label: 'PAINEL DE\nENCOMENDAS',
+    rota: '/painel-encomendas',
+    corFrom: 'from-blue-500', corTo: 'to-blue-700',
+    corHoverFrom: 'hover:from-blue-600', corHoverTo: 'hover:to-blue-800',
+    icon: 'M9 17v-2m3 2v-4m3 2v-6m2 9H7a2 2 0 01-2-2V5a2 2 0 012-2h10a2 2 0 012 2v14a2 2 0 01-2 2z'
+  },
+  {
+    nm_form: 'consultatortas',
+    label: 'CONSULTA\nDE TORTAS',
+    rota: '/tortas',
+    corFrom: 'from-amber-500', corTo: 'to-amber-700',
+    corHoverFrom: 'hover:from-amber-600', corHoverTo: 'hover:to-amber-800',
+    icon: 'M21 15.546c-.523 0-1.046.151-1.5.454a2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.701 2.701 0 00-1.5-.454M9 6v2m3-2v2m3-2v2M9 3h.01M12 3h.01M15 3h.01M21 21v-7a2 2 0 00-2-2H5a2 2 0 00-2 2v7h18zm-3-9v-2a2 2 0 00-2-2H8a2 2 0 00-2 2v2h12z'
+  }
+];
+
 // Mapeamento: nm_form (bauhaus.forms) → rota
 const ITENS_ADMIN = [
   {
@@ -68,6 +96,7 @@ function Menu() {
 
   const temAcesso = (nm_form) => formsPermitidos.has(nm_form.toLowerCase());
 
+  const itensPrincipalVisiveis = ITENS_PRINCIPAL.filter(item => temAcesso(item.nm_form));
   const itensVisiveis = ITENS_ADMIN.filter(item => temAcesso(item.nm_form));
   const temQualquerAdmin = itensVisiveis.length > 0;
 
@@ -151,35 +180,42 @@ function Menu() {
         className="flex-grow flex items-center justify-center p-6"
         onClick={() => setMenuAberto(false)}
       >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl">
-
-          <button
-            onClick={() => navigate('/encomendas/consulta')}
-            className="flex flex-col items-center justify-center p-8 rounded-lg shadow-xl
-                       bg-gradient-to-br from-red-500 to-red-700 text-white
-                       hover:from-red-600 hover:to-red-800 transition-all duration-300
-                       transform hover:-translate-y-1 hover:scale-105"
-          >
-            <svg className="w-20 h-20 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        {carregandoPerms ? (
+          <div className="flex flex-col items-center gap-3 text-gray-400">
+            <svg className="animate-spin w-10 h-10" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
             </svg>
-            <span className="text-3xl font-extrabold text-center">CONSULTA DE<br/>ENCOMENDAS</span>
-          </button>
-
-          <button
-            onClick={() => navigate('/painel-encomendas')}
-            className="flex flex-col items-center justify-center p-8 rounded-lg shadow-xl
-                       bg-gradient-to-br from-blue-500 to-blue-700 text-white
-                       hover:from-blue-600 hover:to-blue-800 transition-all duration-300
-                       transform hover:-translate-y-1 hover:scale-105"
-          >
-            <svg className="w-20 h-20 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 17v-2m3 2v-4m3 2v-6m2 9H7a2 2 0 01-2-2V5a2 2 0 012-2h10a2 2 0 012 2v14a2 2 0 01-2 2z" />
-            </svg>
-            <span className="text-3xl font-extrabold text-center">PAINEL DE<br/>ENCOMENDAS</span>
-          </button>
-
-        </div>
+            <span className="text-sm font-medium">Carregando menu...</span>
+          </div>
+        ) : itensPrincipalVisiveis.length === 0 ? (
+          <div className="text-center text-gray-400 py-16">
+            <p className="text-xl font-bold mb-2">Sem acesso</p>
+            <p className="text-sm">Você não tem permissão para acessar nenhuma tela.<br/>Solicite ao administrador.</p>
+          </div>
+        ) : (
+          <div className={`grid gap-8 w-full max-w-4xl
+            ${itensPrincipalVisiveis.length === 1 ? 'grid-cols-1 max-w-sm' : ''}
+            ${itensPrincipalVisiveis.length === 2 ? 'grid-cols-1 md:grid-cols-2' : ''}
+            ${itensPrincipalVisiveis.length >= 3 ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : ''}
+          `}>
+            {itensPrincipalVisiveis.map(item => (
+              <button
+                key={item.nm_form}
+                onClick={() => navigate(item.rota)}
+                className={`flex flex-col items-center justify-center p-8 rounded-lg shadow-xl
+                  bg-gradient-to-br ${item.corFrom} ${item.corTo} text-white
+                  ${item.corHoverFrom} ${item.corHoverTo}
+                  transition-all duration-300 transform hover:-translate-y-1 hover:scale-105`}
+              >
+                <svg className="w-20 h-20 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d={item.icon} />
+                </svg>
+                <span className="text-3xl font-extrabold text-center whitespace-pre-line">{item.label}</span>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
