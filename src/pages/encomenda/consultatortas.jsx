@@ -82,37 +82,40 @@ function ConsultaTortas() {
   useEffect(() => {
     if (!acessoPermitido) return;
     dataRef.current = dataSelecionada;
-    setLoading(true);
-    Promise.all([
-      carregarEncomendas(dataSelecionada),
-      carregarResponsaveisDia(dataSelecionada)
-    ]);
+    carregarTudo(dataSelecionada);
   }, [acessoPermitido, dataSelecionada]);
 
-  // Auto-refresh a cada 15s
+  // Auto-refresh a cada 5 min
   useEffect(() => {
     if (!acessoPermitido) return;
     const interval = setInterval(() => {
-      carregarEncomendas(dataRef.current);
-      carregarResponsaveisDia(dataRef.current);
-    }, 15000);
+      carregarTudo(dataRef.current);
+    }, 300000);
     return () => clearInterval(interval);
   }, [acessoPermitido]);
 
-  // ── Funções de dados ───────────────────────────────────────────────────────
+  // ── Função unificada de carga (evita piscar com dois setState separados) ──
 
-  async function carregarEncomendas(data) {
+  async function carregarTudo(data) {
+    setLoading(true);
     try {
-      const response = await fetch(`${API_URL}/encomendas/filtrar`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          dt_abertura: data, nm_nomefantasia: "", nr_telefone: "", trazerFoto: false
-        })
-      });
-      if (!response.ok) throw new Error("Erro ao carregar encomendas");
-      const rawData = await response.json();
+      const [resEnc, resResp] = await Promise.all([
+        fetch(`${API_URL}/encomendas/filtrar`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ dt_abertura: data, nm_nomefantasia: "", nr_telefone: "", trazerFoto: false })
+        }),
+        fetch(`${API_URL}/responsavel-dia-enc/listar?dt_encomenda=${data}&nm_produto=${NM_PRODUTO}`)
+      ]);
 
+      const [rawData, rows] = await Promise.all([resEnc.json(), resResp.json()]);
+
+      // Monta mapa de responsáveis
+      const mapa = {};
+      if (Array.isArray(rows)) rows.forEach(r => { mapa[r.id_ordemservicos] = r; });
+      setResponsaveisDia(mapa);
+
+      // Filtra encomendas de torta
       const filtradas = rawData.filter(enc => {
         const naoEntregue  = enc.st_status != 2;
         const temTamanho   = enc.vl_tamanho   && parseFloat(enc.vl_tamanho) > 0;
@@ -122,33 +125,12 @@ function ConsultaTortas() {
         return naoEntregue && (temTamanho || temRecheio || temDecoracao || temObsTorta);
       });
 
-      setEncomendas(prev => {
-        const prontoLocal = prev.filter(p =>
-          p.st_producao === ST_PRODUCAO.PRONTO &&
-          !filtradas.find(o => idItem(o) === idItem(p))
-        );
-        return ordenar([...filtradas, ...prontoLocal], responsaveisDia);
-      });
+      // Um único setEncomendas — sem piscar
+      setEncomendas(ordenar(filtradas, mapa));
     } catch (err) {
-      console.error(err);
+      console.error("Erro ao carregar dados:", err);
     } finally {
       setLoading(false);
-    }
-  }
-
-  async function carregarResponsaveisDia(data) {
-    try {
-      const res  = await fetch(`${API_URL}/responsavel-dia-enc/listar?dt_encomenda=${data}&nm_produto=${NM_PRODUTO}`);
-      const rows = await res.json();
-      const mapa = {};
-      if (Array.isArray(rows)) {
-        rows.forEach(r => { mapa[r.id_ordemservicos] = r; });
-      }
-      setResponsaveisDia(mapa);
-      // re-ordenar com o novo mapa
-      setEncomendas(prev => ordenar([...prev], mapa));
-    } catch (err) {
-      console.error("Erro ao carregar responsáveis do dia:", err);
     }
   }
 
@@ -157,15 +139,19 @@ function ConsultaTortas() {
   }
 
   function ordenar(lista, mapa) {
-    return lista.sort((a, b) => {
+    return [...lista].sort((a, b) => {
+      // 1º: prontos vão sempre para o final
+      const prontoA = (a.st_producao || 1) === ST_PRODUCAO.PRONTO ? 1 : 0;
+      const prontoB = (b.st_producao || 1) === ST_PRODUCAO.PRONTO ? 1 : 0;
+      if (prontoA !== prontoB) return prontoA - prontoB;
+
       const idA = idItem(a);
       const idB = idItem(b);
+      // 2º: itens do usuário logado aparecem primeiro
       const euA = mapa[idA]?.id_empregado === usuarioLogado?.id_empregados ? 0 : 1;
       const euB = mapa[idB]?.id_empregado === usuarioLogado?.id_empregados ? 0 : 1;
       if (euA !== euB) return euA - euB;
-      const sA = a.st_producao || 1;
-      const sB = b.st_producao || 1;
-      if (sA !== sB) return sA - sB;
+      // 3º: horário mais cedo primeiro
       return (a.hr_horaenc || "").localeCompare(b.hr_horaenc || "");
     });
   }
@@ -187,7 +173,7 @@ function ConsultaTortas() {
           dt_encomenda:    dataSelecionada
         })
       });
-      await carregarResponsaveisDia(dataSelecionada);
+      await carregarTudo(dataSelecionada);
     } catch (err) {
       console.error("Erro ao assumir responsabilidade:", err);
     } finally {
@@ -202,7 +188,7 @@ function ConsultaTortas() {
       await fetch(`${API_URL}/responsavel-dia-enc/remover/${id}?nm_produto=${NM_PRODUTO}`, {
         method: "DELETE"
       });
-      await carregarResponsaveisDia(dataSelecionada);
+      await carregarTudo(dataSelecionada);
     } catch (err) {
       console.error("Erro ao remover responsabilidade:", err);
     } finally {
@@ -321,7 +307,7 @@ function ConsultaTortas() {
               <p className="text-xs text-blue-200 font-medium tracking-wide">PAINEL DE TORTAS</p>
             </div>
             <button
-              onClick={() => { carregarEncomendas(dataSelecionada); carregarResponsaveisDia(dataSelecionada); }}
+              onClick={() => carregarTudo(dataSelecionada)}
               className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors font-bold text-sm border border-white/20"
             >
               ↻ Atualizar
