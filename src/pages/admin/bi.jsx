@@ -90,19 +90,25 @@ export default function BiDashboard() {
 
   // ── Derivações ────────────────────────────────────────────────────────────
   const r = dados?.resumo || {};
-  const clientes   = dados?.clientes  || [];
-  const porMes     = dados?.porMes    || [];
-  const porStatus  = dados?.porStatus || [];
-  const horarios   = dados?.horarios  || [];
-  const produtos   = dados?.produtos  || [];
+  const clientes   = dados?.clientes   || [];
+  const porMes     = dados?.porMes     || [];
+  const porStatus  = dados?.porStatus  || [];
+  const horarios   = dados?.horarios   || [];
+  const produtos   = dados?.produtos   || [];
+  const tortasMes  = dados?.tortasMes  || [];
+  const recheios   = dados?.recheios   || [];
 
   const maxClientes  = clientes[0]?.total  || 1;
   const maxProdutos  = produtos[0]?.total  || 1;
+  const maxRecheios  = recheios[0]?.total  || 1;
   const maxMes       = Math.max(...porMes.map(m => Number(m.total)), 1);
+  const maxTortasMes = Math.max(...tortasMes.map(m => Number(m.total)), 1);
   const maxHorario   = Math.max(...horarios.map(h => Number(h.total)), 1);
   const totalStatus  = porStatus.reduce((s, x) => s + Number(x.total), 0) || 1;
 
-  const mesMaisMovimentado = porMes.reduce((a, b) => Number(a.total) >= Number(b.total) ? a : b, {});
+  const mesMaisMovimentado     = porMes.reduce((a, b) => Number(a.total) >= Number(b.total) ? a : b, {});
+  const mesMaisMovTortas       = tortasMes.reduce((a, b) => Number(a.total) >= Number(b.total) ? a : b, {});
+  const totalTortas            = tortasMes.reduce((s, m) => s + Number(m.total), 0);
 
   const COR_PRODUTO = ["bg-red-500","bg-orange-500","bg-amber-500","bg-yellow-500","bg-lime-500",
     "bg-green-500","bg-emerald-500","bg-teal-500","bg-cyan-500","bg-blue-500",
@@ -152,13 +158,11 @@ export default function BiDashboard() {
         <div className="p-6 space-y-6 max-w-screen-xl mx-auto">
 
           {/* ── KPIs ── */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            <KpiCard titulo="Total Encomendas" valor={r.total_encomendas} cor="border-blue-500" corTexto="text-blue-600" />
-            <KpiCard titulo="Clientes Únicos"  valor={r.total_clientes}   cor="border-indigo-500" corTexto="text-indigo-600" />
-            <KpiCard titulo="Entregues"         valor={r.total_entregues}  sub={`${Math.round((r.total_entregues/r.total_encomendas)*100)||0}% do total`} cor="border-green-500" corTexto="text-green-600" />
-            <KpiCard titulo="Pendentes"         valor={r.total_pendentes}  cor="border-yellow-500" corTexto="text-yellow-600" />
-            <KpiCard titulo="Cancelados"        valor={r.total_cancelados} sub={`${Math.round((r.total_cancelados/r.total_encomendas)*100)||0}% do total`} cor="border-red-500" corTexto="text-red-600" />
-            <KpiCard titulo="Com Topo de Bolo"  valor={r.total_com_topo}   cor="border-purple-500" corTexto="text-purple-600" />
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <KpiCard titulo="Total Encomendas" valor={r.total_encomendas} cor="border-blue-500"   corTexto="text-blue-600" />
+            <KpiCard titulo="Entregues"        valor={r.total_entregues}  sub={`${Math.round((r.total_entregues/r.total_encomendas)*100)||0}% do total`} cor="border-green-500"  corTexto="text-green-600" />
+            <KpiCard titulo="Pendentes"        valor={r.total_pendentes}  cor="border-yellow-500" corTexto="text-yellow-600" />
+            <KpiCard titulo="Cancelados"       valor={r.total_cancelados} sub={`${Math.round((r.total_cancelados/r.total_encomendas)*100)||0}% do total`} cor="border-red-500"    corTexto="text-red-600" />
           </div>
 
           {/* ── Linha 1: Clientes + Mês ── */}
@@ -195,7 +199,67 @@ export default function BiDashboard() {
             </Card>
           </div>
 
-          {/* ── Linha 2: Produtos + Status + Horários ── */}
+          {/* ── Linha 2: Tortas por Mês + Top Recheios ── */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+            <Card titulo="🎂 Tortas por Mês (últimos 14 meses)">
+              {tortasMes.length === 0
+                ? <p className="text-sm text-gray-400 italic">Sem dados.</p>
+                : (
+                  <>
+                    <div className="flex items-end gap-1 h-32">
+                      {tortasMes.map((m, i) => (
+                        <BarraV key={i} label={m.mes_label} valor={Number(m.total)} max={maxTortasMes}
+                          cor={m.mes_iso === mesMaisMovTortas.mes_iso ? "bg-orange-500" : "bg-orange-300"} />
+                      ))}
+                    </div>
+                    <div className="mt-3 flex items-center justify-between text-xs text-gray-500">
+                      {mesMaisMovTortas.mes_label && (
+                        <p className="text-orange-700 font-semibold">
+                          📌 Mês mais movimentado: <strong>{mesMaisMovTortas.mes_label}</strong> ({mesMaisMovTortas.total} tortas)
+                        </p>
+                      )}
+                      <p className="font-semibold text-gray-600">Total 14 meses: <strong>{totalTortas}</strong></p>
+                    </div>
+                  </>
+                )
+              }
+            </Card>
+
+            <Card titulo="🍰 Top 15 Recheios Mais Pedidos">
+              {recheios.length === 0
+                ? <p className="text-sm text-gray-400 italic">Sem dados no período.</p>
+                : (() => {
+                    const totalTop15 = recheios.reduce((s, r) => s + Number(r.total), 0);
+                    const totalPeriodo = tortasMes
+                      .filter(m => {
+                        if (!dtIni && !dtFim) return true;
+                        return (!dtIni || m.mes_iso >= dtIni.slice(0,7)) &&
+                               (!dtFim  || m.mes_iso <= dtFim.slice(0,7));
+                      })
+                      .reduce((s, m) => s + Number(m.total), 0);
+                    const fora = totalPeriodo - totalTop15;
+                    return (
+                      <>
+                        {recheios.map((rec, i) => (
+                          <BarraH key={i} label={rec.recheio} valor={Number(rec.total)}
+                            max={maxRecheios}
+                            cor={i === 0 ? "bg-orange-500" : i < 3 ? "bg-amber-400" : "bg-amber-300"}
+                            sufixo=" tortas" />
+                        ))}
+                        <div className="mt-4 pt-3 border-t border-gray-100 flex justify-between text-xs text-gray-500">
+                          <span>Top 15 somam: <strong className="text-orange-600">{totalTop15} tortas</strong></span>
+                          {fora > 0 && <span>Outros sabores: <strong className="text-gray-400">{fora} tortas</strong></span>}
+                          <span>Total período: <strong className="text-gray-700">{totalPeriodo} tortas</strong></span>
+                        </div>
+                      </>
+                    );
+                  })()
+              }
+            </Card>
+          </div>
+
+          {/* ── Linha 3: Produtos + Status + Horários ── */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
             <Card titulo="🥇 Produtos Mais Vendidos (Top 15)" className="lg:col-span-2">

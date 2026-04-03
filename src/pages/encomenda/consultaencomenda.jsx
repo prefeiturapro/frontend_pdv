@@ -224,9 +224,13 @@ function ConsultaEncomenda() {
 
                 {/* ── Totalizador ─────────────────────────────────────── */}
                 {buscaRealizada && !loading && resultados.length > 0 && (() => {
-                  // Contadores sempre usam o total completo, independente do filtro de topo
-                  const lista = resultados;
-                  const totalTopo = resultados.filter(item => item.ds_topo?.trim() === "S").length;
+                  // Contadores respeitam o filtro de topo ativo
+                  const lista = resultados.filter(item => {
+                    if (filtroTopo === "S") return item.ds_topo?.trim() === "S";
+                    if (filtroTopo === "N") return item.ds_topo?.trim() !== "S";
+                    return true;
+                  });
+                  const totalTopo = lista.filter(item => item.ds_topo?.trim() === "S").length;
 
                   const contarEncomendas = (campos) =>
                     lista.filter(item => campos.some(c => {
@@ -284,8 +288,8 @@ function ConsultaEncomenda() {
                 <div className="space-y-4">
                     {(() => {
                       const resultadosFiltrados = resultados.filter(item => {
-                        if (filtroTopo === "S") return item.ds_topo && item.ds_topo.trim() !== "";
-                        if (filtroTopo === "N") return !item.ds_topo || item.ds_topo.trim() === "";
+                        if (filtroTopo === "S") return item.ds_topo?.trim() === "S";
+                        if (filtroTopo === "N") return item.ds_topo?.trim() !== "S";
                         return true;
                       });
                       return resultadosFiltrados.length > 0 ? (
