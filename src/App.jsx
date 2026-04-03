@@ -12,7 +12,9 @@ import Usuarios from "./pages/admin/usuarios";
 import Formularios from "./pages/admin/formularios";
 import Responsavel from "./pages/admin/responsavel";
 import Empregados  from "./pages/admin/empregados";
-import BiDashboard from "./pages/admin/bi";
+import BiDashboard   from "./pages/admin/bi";
+import CartaoPonto   from "./pages/admin/cartaoponto";
+import RegistroPonto from "./pages/ponto";
 import RotaPrivada from './components/RotaPrivada';
 
 function App() {
@@ -38,6 +40,8 @@ function App() {
           <Route path="/admin/responsavel" element={<Responsavel />} />
           <Route path="/admin/empregados"  element={<Empregados />} />
           <Route path="/admin/bi"         element={<BiDashboard />} />
+          <Route path="/admin/cartao-ponto" element={<CartaoPonto />} />
+          <Route path="/ponto"            element={<RegistroPonto />} />
 
         </Route>
       </Routes>
