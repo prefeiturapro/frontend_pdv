@@ -26,7 +26,8 @@ function ConsultaEncomenda() {
   const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:3001";
   const dataHoje = new Date().toISOString().split('T')[0];
 
-  const [filtros, setFiltros] = useState({ nm_nomefantasia: "", nr_telefone: "", dt_abertura: dataHoje, hr_horaenc: "" });
+  const [filtros, setFiltros] = useState({ nm_nomefantasia: "", nr_telefone: "", dt_abertura_ini: dataHoje, dt_abertura_fim: dataHoje, hr_horaenc: "" });
+  const [filtroTopo, setFiltroTopo] = useState("");
   const [resultados, setResultados] = useState([]);
   const [loading, setLoading] = useState(false);
   const [buscaRealizada, setBuscaRealizada] = useState(false);
@@ -71,7 +72,7 @@ function ConsultaEncomenda() {
           method: "POST", 
           headers: { "Content-Type": "application/json" }, 
           // OTIMIZAÇÃO: Trazemos a lista LEVE (sem a foto pesada)
-          body: JSON.stringify({ ...filtros, trazerFoto: false }) 
+          body: JSON.stringify({ ...filtros, dt_abertura: undefined, trazerFoto: false })
       });
       
       if (response.ok) setResultados(await response.json());
@@ -211,17 +212,84 @@ function ConsultaEncomenda() {
                 <form onSubmit={handlePesquisar} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 mb-8 animate-fadeIn">
                     <div className="flex items-center gap-2 mb-4 text-gray-700 font-semibold border-b border-gray-100 pb-2"><IconFilter /> Filtros de Pesquisa</div>
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-                        <div className="md:col-span-4"><label className="block text-xs font-bold text-gray-500 uppercase mb-1">Cliente</label><input type="text" name="nm_nomefantasia" value={filtros.nm_nomefantasia} onChange={handleChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 bg-gray-50" /></div>
-                        <div className="md:col-span-3"><label className="block text-xs font-bold text-gray-500 uppercase mb-1">Telefone</label><input type="text" name="nr_telefone" value={filtros.nr_telefone} onChange={handlePhoneChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 bg-gray-50" /></div>
-                        <div className="md:col-span-2"><label className="block text-xs font-bold text-gray-500 uppercase mb-1">Data</label><input type="date" name="dt_abertura" value={filtros.dt_abertura} onChange={handleChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 bg-gray-50" /></div>
-                        <div className="md:col-span-2"><label className="block text-xs font-bold text-gray-500 uppercase mb-1">Hora</label><input type="time" name="hr_horaenc" value={filtros.hr_horaenc} onChange={handleChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 bg-gray-50" /></div>
+                        <div className="md:col-span-2"><label className="block text-xs font-bold text-gray-500 uppercase mb-1">Cliente</label><input type="text" name="nm_nomefantasia" value={filtros.nm_nomefantasia} onChange={handleChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 bg-gray-50" /></div>
+                        <div className="md:col-span-2"><label className="block text-xs font-bold text-gray-500 uppercase mb-1">Telefone</label><input type="text" name="nr_telefone" value={filtros.nr_telefone} onChange={handlePhoneChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 bg-gray-50" /></div>
+                        <div className="md:col-span-2"><label className="block text-xs font-bold text-gray-500 uppercase mb-1">Data Inicial</label><input type="date" name="dt_abertura_ini" value={filtros.dt_abertura_ini} onChange={handleChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 bg-gray-50" /></div>
+                        <div className="md:col-span-2"><label className="block text-xs font-bold text-gray-500 uppercase mb-1">Data Final</label><input type="date" name="dt_abertura_fim" value={filtros.dt_abertura_fim} onChange={handleChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 bg-gray-50" /></div>
+                        <div className="md:col-span-1"><label className="block text-xs font-bold text-gray-500 uppercase mb-1">Hora</label><input type="time" name="hr_horaenc" value={filtros.hr_horaenc} onChange={handleChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 bg-gray-50" /></div>
+                        <div className="md:col-span-2"><label className="block text-xs font-bold text-gray-500 uppercase mb-1">Topo de Bolo</label><select value={filtroTopo} onChange={e => setFiltroTopo(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 bg-gray-50"><option value="">Todos</option><option value="S">Com Topo</option><option value="N">Sem Topo</option></select></div>
                         <div className="md:col-span-1 flex items-end"><button type="submit" className="w-full py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold shadow-sm flex justify-center items-center">{loading ? "..." : <IconSearch />}</button></div>
                     </div>
                 </form>
 
+                {/* ── Totalizador ─────────────────────────────────────── */}
+                {buscaRealizada && !loading && resultados.length > 0 && (() => {
+                  // Contadores sempre usam o total completo, independente do filtro de topo
+                  const lista = resultados;
+                  const totalTopo = resultados.filter(item => item.ds_topo?.trim() === "S").length;
+
+                  const contarEncomendas = (campos) =>
+                    lista.filter(item => campos.some(c => {
+                      const v = item[c];
+                      if (!v && v !== 0) return false;
+                      const n = parseFloat(v);
+                      return isNaN(n) ? String(v).trim() !== "" : n > 0;
+                    })).length;
+
+                  const somarQuantidades = (campos) =>
+                    lista.reduce((total, item) => {
+                      return total + campos.reduce((s, c) => {
+                        const n = parseFloat(item[c]);
+                        return s + (isNaN(n) ? 0 : n);
+                      }, 0);
+                    }, 0);
+
+                  const GRUPOS = [
+                    { label: "Tortas",      tipo: "count", campos: ["vl_tamanho","ds_recheio","ds_decoracao"], cor: "text-orange-600", sufixo: "enc." },
+                    { label: "Bolos",       tipo: "count", campos: ["vl_bolpamon","vl_bolmilho","vl_bolchoc","vl_bolintban","vl_bolmult","vl_boltoic","vl_bolceno","vl_bolamend","vl_bolbrownie","vl_bolprest","vl_bolbanana","vl_bolaveia","vl_bollaranj","vl_bolcuca"], cor: "text-yellow-600", sufixo: "enc." },
+                    { label: "Salgadinhos", tipo: "sum",   campos: ["vl_risfrango","vl_rispresque","vl_coxinha","vl_pastelcar","vl_pastelban","vl_salsic","vl_quibe","vl_bolquei","vl_rispalm","vl_pastmil"], cor: "text-red-600", sufixo: "un." },
+                    { label: "Mini's",      tipo: "sum",   campos: ["vl_mindonu","vl_minempa","vl_miniquic","vl_minibaufr","vl_minibaupr","vl_minibauca","vl_minicook","vl_minix","vl_minisoave","vl_minicacho","vl_minipaoca","vl_minipaofr","vl_minisonre","vl_paominix","vl_mnipizza"], cor: "text-pink-600", sufixo: "un." },
+                    { label: "Diversos",    tipo: "sum",   campos: ["vl_assadfra","vl_assadcar","vl_assadcho","vl_sandfr","vl_sandfra","vl_doccam","vl_barc","vl_paofr","vl_paodoc","vl_cricri","vl_tortsa","vl_maeben","vl_outros","vl_cookie","vl_paoque","vl_paocach","vl_paoham","vl_marr","vl_sonsere","vl_sonavel","vl_sondoc","vl_sonbal","vl_cava","vl_empad","vl_quich","vl_empagr","vl_cacho","vl_pudin","vl_pizza","vl_sandfrint"], cor: "text-blue-600", sufixo: "un." },
+                  ];
+
+                  return (
+                    <div className="bg-white border border-gray-200 rounded-2xl shadow-sm px-6 py-4 mb-6 flex flex-wrap items-center gap-4">
+                      <div className="flex items-center gap-2 pr-4 border-r border-gray-200 shrink-0">
+                        <span className="text-2xl font-extrabold text-gray-800">{lista.length}</span>
+                        <span className="text-sm font-semibold text-gray-500 uppercase tracking-wide leading-tight">Total de<br/>Encomendas</span>
+                      </div>
+                      {GRUPOS.map(({ label, tipo, campos, cor, sufixo }) => {
+                        const qtd = tipo === "sum" ? somarQuantidades(campos) : contarEncomendas(campos);
+                        if (qtd === 0) return null;
+                        return (
+                          <div key={label} className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg border border-gray-100">
+                            <div className="text-right">
+                              <span className={`text-xl font-extrabold ${cor}`}>{qtd}</span>
+                              <span className="text-[10px] text-gray-400 ml-0.5">{sufixo}</span>
+                            </div>
+                            <span className="text-xs font-semibold text-gray-600 leading-tight">{label}</span>
+                          </div>
+                        );
+                      })}
+                      {totalTopo > 0 && (
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-purple-50 rounded-lg border border-purple-100">
+                          <span className="text-xl font-extrabold text-purple-600">{totalTopo}</span>
+                          <span className="text-xs font-semibold text-purple-700 leading-tight">Topo</span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+
                 <div className="space-y-4">
-                    {resultados.length > 0 ? (
-                        resultados.map((item, index) => {
+                    {(() => {
+                      const resultadosFiltrados = resultados.filter(item => {
+                        if (filtroTopo === "S") return item.ds_topo && item.ds_topo.trim() !== "";
+                        if (filtroTopo === "N") return !item.ds_topo || item.ds_topo.trim() === "";
+                        return true;
+                      });
+                      return resultadosFiltrados.length > 0 ? (
+                        resultadosFiltrados.map((item, index) => {
                             const status = item.st_status;
                             let badgeClass = status == 1 ? "bg-yellow-100 text-yellow-800" : status == 2 ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800";
                             let statusText = status == 1 ? "🕒 Aguardando retirada" : status == 2 ? "✅ Entregue" : "🚫 Cancelado";
@@ -242,7 +310,8 @@ function ConsultaEncomenda() {
                                 </div>
                             );
                         })
-                    ) : ( buscaRealizada && !loading && <div className="text-center py-12 bg-white rounded-2xl border border-dashed"><h3 className="text-gray-600">Nenhum pedido encontrado</h3></div> )}
+                    ) : ( buscaRealizada && !loading && <div className="text-center py-12 bg-white rounded-2xl border border-dashed"><h3 className="text-gray-600">Nenhum pedido encontrado</h3></div> );
+                    })()}
                 </div>
             </div>
         </main>
